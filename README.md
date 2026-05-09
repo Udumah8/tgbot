@@ -1,6 +1,6 @@
-# Solana Volume & Trading Bot v3.2 🤖🚀
+# Solana Volume & Trading Bot v3.3 🤖🚀
 
-**Enterprise-Grade Solana Trading Automation with Natural Behavior & Anti-Detection**
+**Enterprise-Grade Solana Trading Automation with Distributed Agent System & Anti-Detection**
 
 A production-ready, institutional-quality Solana trading and volume generation bot with complete Telegram control interface. Features 19 battle-tested trading strategies, advanced multi-strategy manager, intelligent randomization for natural behavior, wallet aging system, Jito MEV protection, 10,000+ wallet management, multi-DEX support (15+ protocols), and failover resilience.
 
@@ -9,33 +9,31 @@ A production-ready, institutional-quality Solana trading and volume generation b
 [![Solana](https://img.shields.io/badge/Solana-Mainnet-purple.svg)](https://solana.com/)
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
 
-> **⚡ Live Telegram Control • 🎯 Multi-Strategy Manager • 🤖 Natural Behavior AI • 🔐 Enterprise Security • 📊 Real-time Monitoring**
+> **⚡ Live Telegram Control • 🎯 Multi-Strategy Manager • 🤖 Distributed Agent System • 🔐 Enterprise Security • 📊 Real-time Monitoring**
 
 ---
 
-## 🎯 What's New in v3.2
+## 🎯 What's New in v3.3
 
-### 🤖 Natural Behavior & Anti-Detection System
-- **Randomized funding amounts** (±25% variance per wallet)
-- **Enhanced trade randomization** (double-layer jitter system)
-- **Random pre-trade delays** (0-3 seconds for organic timing)
-- **Works on BOTH modes** (ephemeral and wallet pool)
-- **Undetectable patterns** - simulates human trading behavior
-- **Minimal capital mode** - run with just 0.012 SOL total
+### 🤖 Distributed Agent Trading System
+- **Fully independent Wallet Agents** replacing legacy batch execution loops
+- **Per-Wallet Entropy Engine** ensuring true mathematical randomness without shared state
+- **Agent State Machine** with auto-recovery (ACTIVE → DEGRADED → PAUSED)
+- **Post-Trade Verification** guaranteeing complete execution reliability
+- **Stuck Detection & Graceful Degradation** for resilient long-running campaigns
 
-### 🎯 Multi-Strategy Manager
+### 🎯 Multi-Strategy Manager (Agent Enabled)
 - **Run multiple strategies simultaneously** with isolated wallet pools
+- **Real-time agent dashboard** tracking status during strategy initialization
 - **Per-cycle wallet funding** for ephemeral mode (eliminates rate limiting)
 - **Chart pattern selection UI** for both single and multi-strategy
-- **Pause/Resume functionality** for active strategies
-- **Real-time monitoring** of all running strategies
+- **Flawless Pause/Resume functionality** for active multi-strategies
 - **Independent configuration** per strategy
 
 ### ⚡ Enhanced Features
 - **Smart wallet allocation** between strategies
 - **Ephemeral mode improvements** with automatic per-cycle funding/draining
 - **Better error handling** for Telegram connection timeouts
-- **Improved pause/resume** with proper state management
 - **No hard wallet limits** - respects user configuration
 - **Configurable jitter** via Telegram UI
 
