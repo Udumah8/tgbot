@@ -1,0 +1,11 @@
+node_modules/
+.env
+wallets.json
+wallets.metadata.json
+wallets.backup.json
+wallets.metadata.json.backup
+multi_strategies.json
+*.log
+lint-report.json
+.kilocode/
+.kiro/

@@ -1,0 +1,39 @@
+{
+  "name": "telegram-volume-bot",
+  "version": "2.0.0",
+  "description": "Refactored Solana Volume Bot with state-machine architecture",
+  "main": "volumebot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node volumebot.js",
+    "test": "mocha --timeout 20000 walletManager.test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@jup-ag/core": "^4.0.0-beta.21",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "1.98.4",
+    "axios": "^1.7.2",
+    "better-sqlite3": "^12.8.0",
+    "borsh": "^2.0.0",
+    "bs58": "^5.0.0",
+    "buffer": "^6.0.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "solana-swap": "^1.1.2",
+    "solana-trade": "^1.1.0",
+    "winston": "^3.19.0"
+  },
+  "overrides": {
+    "@coral-xyz/anchor": "0.29.0",
+    "@solana/web3.js": "1.98.4"
+  },
+  "devDependencies": {
+    "chai": "^6.2.2",
+    "eslint": "^8.57.1",
+    "mocha": "^11.7.5",
+    "sinon": "^21.0.3"
+  }
+}
