@@ -99,7 +99,8 @@ async function executeStrategyWithAgents(strategy, deps) {
         bot,
         logger,
         sleepFn,
-        agentTimeBucketMs = 60000
+        agentTimeBucketMs = 60000,
+        rpcUrl
     } = deps;
 
     const strategyId = strategy.id;
@@ -246,7 +247,10 @@ async function executeStrategyWithAgents(strategy, deps) {
         strategyConfig: {
             ...config,
             strategyType: strategy.type,
-            strategyId: strategy.id
+            strategyId: strategy.id,
+            targetDex: config.targetDex || 'PUMP_FUN',
+            curveTargetPercent: config.curveTargetPercent || 80,
+            rpcUrl: rpcUrl || process.env.RPC_URL
         },
 
         // Behavior-driven action decision

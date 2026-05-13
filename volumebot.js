@@ -4417,7 +4417,8 @@ async function executeMultiStrategyInstance(strategy, chatId) {
             bot,
             logger,
             sleepFn: sleep,
-            agentTimeBucketMs: STATE.agentTimeBucketMs || 60000
+            agentTimeBucketMs: STATE.agentTimeBucketMs || 60000,
+            rpcUrl: RPC_URLS[currentRpcIndex % RPC_URLS.length]
         });
     } catch (error) {
         logger.error(`[MultiStrategy] Agent execution error for ${strategy.name}: ${error.message}`);
