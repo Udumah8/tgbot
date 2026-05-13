@@ -62,15 +62,59 @@ const curveCache = new Map();
 // key: `${market}:${mint}`  →  { percent, fetchedAt }
 
 /**
+ * Validate market and mint configuration before attempting API calls
+ * @param {string} market - Market identifier
+ * @param {string} mint - Token mint address
+ * @returns {{ valid: boolean, error?: string }}
+ */
+function validateMarketMintConfig(market, mint) {
+    // Valid markets that support bonding curves
+    const BONDING_CURVE_MARKETS = [
+        'PUMP_FUN',
+        'PUMP_SWAP',
+        'METEORA_DBC',
+        'RAYDIUM_LAUNCHPAD',
+        'MOONIT',
+        'HEAVEN',
+        'SUGAR',
+        'BOOP_FUN'
+    ];
+
+    if (!market) {
+        return { valid: false, error: 'Market is undefined or empty' };
+    }
+
+    if (!mint) {
+        return { valid: false, error: 'Mint address is undefined or empty' };
+    }
+
+    // Check if market supports bonding curves
+    if (!BONDING_CURVE_MARKETS.includes(market)) {
+        return { 
+            valid: false, 
+            error: `Market '${market}' does not support bonding curves. Valid markets: ${BONDING_CURVE_MARKETS.join(', ')}` 
+        };
+    }
+
+    // Basic mint address validation (should be base58 and ~44 chars)
+    if (typeof mint !== 'string' || mint.length < 32 || mint.length > 44) {
+        return { valid: false, error: `Invalid mint address format: ${mint}` };
+    }
+
+    return { valid: true };
+}
+
+/**
  * Fetch the live bonding curve completion % using solana-trade.
  * Results are cached per (market, mint) for CURVE_CACHE_TTL_MS.
  *
  * @param {string} market  - e.g. 'PUMP_FUN' or 'METEORA_DBC'
  * @param {string} mint    - token mint address
  * @param {string} rpcUrl  - Solana RPC endpoint
+ * @param {Object} logger  - Logger instance (optional)
  * @returns {Promise<{ percent: number, price: number }>}
  */
-async function fetchCurveState(market, mint, rpcUrl) {
+async function fetchCurveState(market, mint, rpcUrl, logger = console) {
     const cacheKey = `${market}:${mint}`;
     const cached = curveCache.get(cacheKey);
 
@@ -78,20 +122,78 @@ async function fetchCurveState(market, mint, rpcUrl) {
         return { percent: cached.percent, price: cached.price };
     }
 
-    // solana-trade's price() returns { price, bondingCurvePercent }
-    // bondingCurvePercent is null for non-bonding-curve markets
-    const trader = new SolanaTrade(rpcUrl);
-    const result = await trader.price({
-        market,
-        mint,
-        unit: 'SOL',
-    });
+    // Validate configuration before making API call
+    const validation = validateMarketMintConfig(market, mint);
+    if (!validation.valid) {
+        throw new Error(`Configuration error: ${validation.error}`);
+    }
 
-    const percent = result.bondingCurvePercent ?? 0; // null → 0 for safety
-    const price   = result.price ?? 0;
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let lastError = null;
 
-    curveCache.set(cacheKey, { percent, price, fetchedAt: Date.now() });
-    return { percent, price };
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            // solana-trade's price() returns { price, bondingCurvePercent }
+            // bondingCurvePercent is null for non-bonding-curve markets
+            const trader = new SolanaTrade(rpcUrl);
+            const result = await trader.price({
+                market,
+                mint,
+                unit: 'SOL',
+            });
+
+            const percent = result.bondingCurvePercent ?? 0; // null → 0 for safety
+            const price   = result.price ?? 0;
+
+            curveCache.set(cacheKey, { percent, price, fetchedAt: Date.now() });
+            return { percent, price };
+
+        } catch (err) {
+            lastError = err;
+            
+            // Log detailed error information
+            if (logger && logger.error) {
+                logger.error(`[CurvePump] Fetch attempt ${attempt + 1}/${maxRetries} failed:`, {
+                    error: err.message,
+                    stack: err.stack,
+                    market,
+                    mint: mint.slice(0, 8) + '...',
+                    rpcUrl: rpcUrl.slice(0, 30) + '...'
+                });
+            }
+
+            // Check if error is retryable
+            const isRetryable = err.message?.toLowerCase().includes('429') ||
+                               err.message?.toLowerCase().includes('timeout') ||
+                               err.message?.toLowerCase().includes('network') ||
+                               err.message?.toLowerCase().includes('rate limit');
+
+            // Don't retry on assertion failures or invalid config
+            if (err.message?.toLowerCase().includes('assertion') ||
+                err.message?.toLowerCase().includes('invalid') ||
+                err.message?.toLowerCase().includes('not found')) {
+                throw new Error(`Non-retryable error: ${err.message}. Check if token ${mint.slice(0, 8)}... exists on ${market} market.`);
+            }
+
+            // If retryable and not last attempt, wait with exponential backoff
+            if (isRetryable && attempt < maxRetries - 1) {
+                const backoffMs = 1000 * Math.pow(2, attempt);
+                if (logger && logger.warn) {
+                    logger.warn(`[CurvePump] Retrying after ${backoffMs}ms...`);
+                }
+                await new Promise(resolve => setTimeout(resolve, backoffMs));
+                continue;
+            }
+
+            // Last attempt or non-retryable
+            if (attempt === maxRetries - 1) {
+                throw lastError;
+            }
+        }
+    }
+
+    throw lastError || new Error('Failed to fetch curve state after retries');
 }
 
 /**
@@ -154,10 +256,11 @@ async function decideAction(agent) {
         agent.lastCurvePercent  = 0;
         agent.cyclesInPhase     = 0;
         agent.totalBuysSol      = 0;
+        agent.curveConfigValidated = false; // Flag for one-time config validation
 
         agent.logger.info(
             `[CurvePump] Init — intensity: ${agent.curveIntensity.toFixed(2)}, ` +
-            `target: ${agent.curveTargetPercent ?? 80}%`
+            `target: ${agent.strategyConfig?.curveTargetPercent ?? agent.curveTargetPercent ?? 80}%`
         );
     }
 
@@ -166,11 +269,26 @@ async function decideAction(agent) {
     let currentPrice = 0;
 
     try {
-        const market  = agent.targetDex ?? 'PUMP_FUN';
+        // Get configuration from agent's strategyConfig
+        const market  = agent.strategyConfig?.targetDex || agent.targetDex || 'PUMP_FUN';
         const mint    = agent.tokenMint;
-        const rpcUrl  = agent.rpcUrl ?? process.env.RPC_URL ?? 'https://api.mainnet-beta.solana.com';
+        const rpcUrl  = agent.strategyConfig?.rpcUrl || agent.rpcUrl || process.env.RPC_URL || 'https://api.mainnet-beta.solana.com';
 
-        const state   = await fetchCurveState(market, mint, rpcUrl);
+        // Validate configuration on first fetch
+        if (!agent.curveConfigValidated) {
+            agent.logger.info(`[CurvePump] Validating configuration - Market: ${market}, Mint: ${mint.slice(0, 8)}...`);
+            
+            const validation = validateMarketMintConfig(market, mint);
+            if (!validation.valid) {
+                agent.logger.error(`[CurvePump] ❌ Configuration validation failed: ${validation.error}`);
+                throw new Error(validation.error);
+            }
+            
+            agent.logger.info(`[CurvePump] ✅ Configuration validated successfully`);
+            agent.curveConfigValidated = true;
+        }
+
+        const state   = await fetchCurveState(market, mint, rpcUrl, agent.logger);
         curvePercent  = state.percent;
         currentPrice  = state.price;
 
@@ -186,12 +304,28 @@ async function decideAction(agent) {
         agent.lastCurvePercent = curvePercent;
 
     } catch (err) {
-        // RPC failure — use last known value, don't crash the agent
-        agent.logger.warn(`[CurvePump] Failed to fetch curve state: ${err.message} — using cached ${curvePercent.toFixed(1)}%`);
+        // Log detailed error information
+        agent.logger.error(`[CurvePump] Failed to fetch curve state:`, {
+            error: err.message,
+            market: agent.strategyConfig?.targetDex || agent.targetDex || 'PUMP_FUN',
+            mint: agent.tokenMint?.slice(0, 8) + '...',
+            lastKnownPercent: curvePercent.toFixed(1) + '%'
+        });
+        
+        // If this is a configuration error, pause the agent
+        if (err.message?.includes('Configuration error') || 
+            err.message?.includes('does not support bonding curves') ||
+            err.message?.includes('Invalid mint address')) {
+            agent.logger.error(`[CurvePump] ❌ Fatal configuration error - agent cannot continue`);
+            throw err; // Propagate to pause the agent
+        }
+        
+        // Otherwise, use cached value and continue
+        agent.logger.warn(`[CurvePump] Using cached ${curvePercent.toFixed(1)}% - will retry next cycle`);
     }
 
     // ── Check hard target ─────────────────────────────────
-    const targetPercent = agent.curveTargetPercent ?? 80;
+    const targetPercent = agent.strategyConfig?.curveTargetPercent ?? agent.curveTargetPercent ?? 80;
     if (curvePercent >= targetPercent) {
         agent.logger.info(`[CurvePump] ✅ Target ${targetPercent}% reached (current: ${curvePercent.toFixed(1)}%). Switching to exit.`);
         return handleGraduated(agent, entropy);
@@ -361,4 +495,10 @@ async function handleGraduated(agent, entropy) {
 // ─────────────────────────────────────────────
 // Exports
 // ─────────────────────────────────────────────
-export default { decideAction, CURVE_PHASES, fetchCurveState, getPhaseFromCurve };
+export default { 
+    decideAction, 
+    CURVE_PHASES, 
+    fetchCurveState, 
+    getPhaseFromCurve,
+    validateMarketMintConfig 
+};
