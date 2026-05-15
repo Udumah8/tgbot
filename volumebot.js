@@ -2708,14 +2708,7 @@ function showMainMenu(chatId) {
         }
     );
 }
-//                     [{ text: '📈 Strategies', callback_data: 'strategies' }, { text: '⚙️ Settings', callback_data: 'settings' }],
-//                     [{ text: '�💼 Wallet Pool', callback_data: 'wallet_pool' }, { text: '📊 Dashboard', callback_data: 'status' }],
-//                     [{ text: '📜 Wallet Info', callback_data: 'show_wallet' }, { text: '❓ Help', callback_data: 'help' }]
-//                 ]
-//             }
-//         }
-//     );
-// }
+
 
 function showStrategyMenu(chatId) {
     const s = STATE.strategy;
