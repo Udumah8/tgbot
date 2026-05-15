@@ -10,13 +10,16 @@
  *   - Buy amounts scale with dip depth (deeper dips = larger buys)
  *   - Sell amounts scale with peak strength (higher peaks = larger sells)
  *
- * AUDIT FIXES (v2):
+ * AUDIT FIXES (v3 - FINAL):
  *   - Added input validation for agent properties
  *   - Added error handling for async operations
  *   - Fixed potential negative multiplier values
  *   - Fixed pattern reset logic and flow control
  *   - Added safety checks for division by zero
  *   - Improved logging and error messages
+ *   - CRITICAL: Fixed buy amount exceeding maxBuyAmount constraint
+ *   - Added minimum sell amount check to prevent dust transactions
+ *   - Enhanced logging with dipStrength and peakStrength metrics
  */
 
 const PATTERNS = [
@@ -217,12 +220,15 @@ async function decideAction(agent) {
             // Buy with pattern-adjusted amount (larger buys at deeper dips)
             const baseAmount = entropy.getRandomFloat(agent.minBuyAmount, agent.maxBuyAmount);
             const dipStrength = Math.max(0, 1.0 - multiplier); // 0 at par, larger at deeper dips
-            const amount = parseFloat((baseAmount * (1 + dipStrength * 0.5)).toFixed(6));
+            const adjustedAmount = baseAmount * (1 + dipStrength * 0.5);
+            // CRITICAL: Ensure we don't exceed maxBuyAmount even with dip adjustment
+            const amount = parseFloat(Math.min(adjustedAmount, agent.maxBuyAmount).toFixed(6));
 
             agent.chartTrades++;
             agent.logger.debug(
                 `[ChartPattern] BUY ${amount} (phase: ${agent.chartPhase.toFixed(2)}, ` +
-                `multiplier: ${multiplier.toFixed(2)}, trade: ${agent.chartTrades}/${agent.chartMaxTrades})`
+                `multiplier: ${multiplier.toFixed(2)}, dipStrength: ${dipStrength.toFixed(2)}, ` +
+                `trade: ${agent.chartTrades}/${agent.chartMaxTrades})`
             );
             return { type: 'BUY', amount };
         } else {
@@ -232,13 +238,22 @@ async function decideAction(agent) {
                 const minSell      = 0.10 + peakStrength * 0.10; // 10–20%
                 const maxSell      = 0.25 + peakStrength * 0.25; // 25–50%
                 const sellPortion  = entropy.getRandomFloat(minSell, maxSell);
-                const amount       = parseFloat((tokenBalance * sellPortion).toFixed(6));
+                const rawAmount    = tokenBalance * sellPortion;
+                const amount       = parseFloat(rawAmount.toFixed(6));
+
+                // Check if amount is too small (dust) - avoid failed transactions
+                if (amount < 0.000001) {
+                    agent.logger.debug(
+                        `[ChartPattern] WAIT (sell amount too small: ${amount}, phase: ${agent.chartPhase.toFixed(2)})`
+                    );
+                    return { type: 'WAIT' };
+                }
 
                 agent.chartTrades++;
                 agent.logger.debug(
                     `[ChartPattern] SELL ${amount} (${(sellPortion * 100).toFixed(1)}% of balance, ` +
                     `phase: ${agent.chartPhase.toFixed(2)}, multiplier: ${multiplier.toFixed(2)}, ` +
-                    `trade: ${agent.chartTrades}/${agent.chartMaxTrades})`
+                    `peakStrength: ${peakStrength.toFixed(2)}, trade: ${agent.chartTrades}/${agent.chartMaxTrades})`
                 );
                 return { type: 'SELL', amount };
             } else {
