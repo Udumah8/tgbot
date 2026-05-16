@@ -56,6 +56,14 @@ import {
 // Import Entropy Engine for per-wallet randomness
 import { EntropyEngine } from "./entropyEngine.js";
 
+// Import Behavioral Ecosystem Integration
+import { 
+    initializeBehavioralEcosystem, 
+    shutdownBehavioralEcosystem, 
+    updateActiveWalletCount,
+    getEcosystemStats 
+} from './behavioralIntegration.js';
+
 // Import Behavior Modules for Agent-Based Execution
 import standardBehavior from "./behaviors/standardBehavior.js";
 import makerBehavior from "./behaviors/makerBehavior.js";

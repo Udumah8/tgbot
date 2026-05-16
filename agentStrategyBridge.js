@@ -13,6 +13,7 @@
 
 import { AgentExecutor } from './agentExecutor.js';
 import { EntropyEngine } from './entropyEngine.js';
+import { createEnhancedAgentConfig, recordTradeInEcosystem } from './behavioralIntegration.js';
 
 // SOL address constant
 const SOL_ADDR = 'So11111111111111111111111111111111111111112';
@@ -225,8 +226,8 @@ async function executeStrategyWithAgents(strategy, deps) {
         }
     }
 
-    // ─── Build Agent Config ───
-    const agentConfig = {
+    // ─── Build Base Agent Config ───
+    const baseAgentConfig = {
         connection,
         tokenMint: config.tokenAddress,
         strategy: behaviorKey,
@@ -253,7 +254,7 @@ async function executeStrategyWithAgents(strategy, deps) {
             rpcUrl: rpcUrl || process.env.RPC_URL
         },
 
-        // Behavior-driven action decision
+        // Behavior-driven action decision (will be wrapped by behavioral ecosystem)
         decideAction: async (agent) => {
             try {
                 return await behavior.decideAction(agent);
@@ -328,6 +329,9 @@ async function executeStrategyWithAgents(strategy, deps) {
             return ['STOPPED', 'ERROR', 'IDLE'].includes(strategy.status);
         }
     };
+
+    // ─── Enhance with Behavioral Ecosystem ───
+    const agentConfig = createEnhancedAgentConfig(baseAgentConfig, baseAgentConfig.decideAction);
 
     // ─── Start Agents ───
     if (chatId && bot) {
