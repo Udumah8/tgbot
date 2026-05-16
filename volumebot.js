@@ -236,6 +236,17 @@ async function handleShutdown(signal) {
         logger?.error(`Error stopping agents during shutdown: ${e.message}`);
     }
 
+    // Shutdown behavioral ecosystem
+    if (behavioralEcosystem && STATE.useBehavioralEcosystem) {
+        logger?.info('🧠 Shutting down behavioral ecosystem...');
+        try {
+            await shutdownBehavioralEcosystem();
+            logger?.info('✅ Behavioral ecosystem shutdown complete');
+        } catch (error) {
+            logger?.error('❌ Error shutting down behavioral ecosystem:', error);
+        }
+    }
+
     if (smartSellInterval) {
         clearInterval(smartSellInterval);
         smartSellInterval = null;
@@ -285,6 +296,30 @@ try {
 } catch (e) {
     // Standard initialization warning
     logger.warn(`⚠️ SolanaTrade provider failed to load: ${e.message}. Using SolanaTracker as fallback.`);
+}
+
+// ─────────────────────────────────────────────
+// 🧠 Behavioral Ecosystem Initialization
+// ─────────────────────────────────────────────
+let behavioralEcosystem = null;
+if (STATE.useBehavioralEcosystem) {
+    (async () => {
+        try {
+            logger.info('🧠 Initializing behavioral ecosystem...');
+            behavioralEcosystem = await initializeBehavioralEcosystem(logger);
+            logger.info('✅ Behavioral ecosystem initialized successfully');
+            
+            // Log initial stats
+            const stats = getEcosystemStats();
+            if (stats) {
+                logger.info(`📊 Ecosystem ready - Regime: ${stats.ecosystem.regime}, Health: ${stats.health.status}`);
+            }
+        } catch (error) {
+            logger.error('❌ Failed to initialize behavioral ecosystem:', error);
+            logger.warn('⚠️ Bot will continue without behavioral features');
+            STATE.useBehavioralEcosystem = false;
+        }
+    })();
 }
 
 // ─────────────────────────────────────────────
@@ -423,6 +458,64 @@ bot.on('polling_error', (err) => {
         logger.warn(`   3. Telegram API token in .env`);
     }
 })();
+
+// ─────────────────────────────────────────────
+// 🧠 Behavioral Ecosystem Telegram Command
+// ─────────────────────────────────────────────
+bot.onText(/\/ecosystem/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (!isAdmin(chatId)) {
+        bot.sendMessage(chatId, '⛔ Admin only');
+        return;
+    }
+
+    if (!STATE.useBehavioralEcosystem) {
+        bot.sendMessage(chatId, '⚠️ Behavioral ecosystem is disabled\n\nSet `useBehavioralEcosystem: true` in config to enable.');
+        return;
+    }
+
+    const stats = getEcosystemStats();
+    if (!stats) {
+        bot.sendMessage(chatId, '⚠️ Behavioral ecosystem not initialized yet. Please wait...');
+        return;
+    }
+
+    const message = `
+🧠 *Behavioral Ecosystem Status*
+
+*Overview*
+Wallets: \`${stats.wallets}\`
+Regime: \`${stats.ecosystem.regime}\`
+Sentiment: \`${(stats.ecosystem.sentiment * 100).toFixed(1)}%\`
+Hype Level: \`${(stats.ecosystem.hypeLevel * 100).toFixed(1)}%\`
+Fear Index: \`${(stats.ecosystem.fearIndex * 100).toFixed(1)}%\`
+Momentum: \`${(stats.ecosystem.momentum * 100).toFixed(1)}%\`
+
+*Social Structure*
+Leaders: \`${stats.social.leaders}\`
+Followers: \`${stats.social.followers}\`
+Independent: \`${stats.social.independent}\`
+Whales: \`${stats.social.whales}\`
+
+*Lifecycle*
+Active: \`${stats.lifecycle.active}\`
+Dormant: \`${stats.lifecycle.dormant}\`
+Retired: \`${stats.lifecycle.retired}\`
+Avg PnL: \`${stats.lifecycle.avgLifetimePnL.toFixed(4)} SOL\`
+
+*Mutations*
+Total: \`${stats.mutations.totalMutations}\`
+Wallets Mutated: \`${stats.mutations.walletsWithMutations}\`
+
+*Health*
+Status: \`${stats.health.status}\`
+${stats.health.activeIssues.length > 0 ? `⚠️ Issues: ${stats.health.activeIssues.join(', ')}` : '✅ No issues detected'}
+    `.trim();
+
+    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' }).catch(err => {
+        logger.error('Failed to send ecosystem stats:', err.message);
+    });
+});
 
 // Master wallet
 let masterKeypair = null;
@@ -572,7 +665,13 @@ const STATE = {
     agentVerifyTrades: true,       // Verify balance changes after trades
     agentMaxRetries: 3,            // Max retries per agent
     agentStuckThreshold: 10,       // Cycles without balance change before pause
-    agentTimeBucketMs: 60000       // Entropy time bucket (1 minute)
+    agentTimeBucketMs: 60000,      // Entropy time bucket (1 minute)
+
+    // 🧠 BEHAVIORAL ECOSYSTEM (Persistent Adaptive Trading Psychology)
+    useBehavioralEcosystem: true,           // Enable behavioral ecosystem
+    behavioralMutationRate: 0.01,           // DNA mutation rate (1%)
+    behavioralHealthCheckInterval: 60000,   // Health check every minute
+    behavioralAutoCorrect: true             // Enable automatic corrections
 };
 
 loadConfig();
