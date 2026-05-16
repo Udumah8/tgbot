@@ -1,0 +1,381 @@
+﻿
+You are a senior distributed systems architect, behavioral simulation engineer, and Solana trading infrastructure specialist.
+
+Your task is to deeply refactor and evolve an existing multi-wallet autonomous trading ecosystem into a persistent adaptive behavioral ecosystem.
+
+The current system already contains:
+
+WalletAgent architecture
+AgentExecutor orchestration
+EntropyEngine
+Strategy behavior modules
+AgentStrategyBridge
+Wallet pools
+Distributed async loops
+Independent retry/state systems
+Strategy abstraction
+Trade verification
+Lifecycle control
+DO NOT rewrite the system from scratch.
+
+Your mission is to EVOLVE the existing architecture into a psychologically realistic emergent ecosystem.
+
+======================================== CORE OBJECTIVE
+Transform the system from:
+
+“many randomized bots”
+
+into:
+
+“a persistent evolving synthetic market ecosystem”
+
+The final behavior should resemble:
+
+adaptive market participants
+evolving wallet personalities
+emotional decision making
+social influence propagation
+long-term ecosystem continuity
+behavioral divergence
+nonlinear market reactions
+NOT deterministic scripted loops.
+
+======================================== PHASE 1 — WALLET DNA ENGINE
+Create a new module:
+
+/core/walletDNA.js
+
+Every wallet must have persistent personality DNA.
+
+DNA MUST persist permanently across restarts.
+
+Example structure:
+
+{
+    aggression,
+    patience,
+    fearSensitivity,
+    greedFactor,
+    conviction,
+    volatilityAffinity,
+    socialSusceptibility,
+    executionDiscipline,
+    fatigueRate,
+    dipBuyingBias,
+    impulsiveness,
+    holdingStrength,
+    riskTolerance,
+    revengeTradingBias
+}
+Requirements:
+
+Generated from entropy on first creation
+Persisted to storage
+Never regenerated after restart
+Used in ALL behavior decisions
+Integrate DNA into:
+
+timing
+sizing
+buy/sell probability
+holding duration
+retry behavior
+slippage tolerance
+panic reactions
+distribution patterns
+======================================== PHASE 2 — PERSISTENT MEMORY ENGINE
+Create:
+
+/core/walletMemory.js
+
+Wallets must remember:
+
+wins
+losses
+failed swaps
+volatility trauma
+pnl history
+successful behaviors
+previous holding durations
+market conditions during profitable trades
+Memory structure example:
+
+{
+    confidence,
+    fear,
+    greed,
+    fatigue,
+    pnlHistory,
+    recentWins,
+    recentLosses,
+    failedTrades,
+    averageHoldTime,
+    successfulStrategies,
+    traumaEvents,
+    profitMomentum
+}
+Update memory dynamically after every trade.
+
+Behavior must evolve from memory.
+
+Example:
+
+repeated losses increase fear
+wins increase aggression
+failures increase hesitation
+profitable holds increase conviction
+======================================== PHASE 3 — EMOTIONAL STATE ENGINE
+Create:
+
+/core/emotionalState.js
+
+Add emotional states:
+
+CONFIDENT
+GREEDY
+FEARFUL
+CAUTIOUS
+FOMO
+PANIC
+EXHAUSTED
+REVENGE_TRADING
+EUPHORIC
+Wallet emotion must evolve continuously.
+
+Emotion affects:
+
+trade frequency
+buy pressure
+sell pressure
+position sizing
+holding duration
+retry aggression
+slippage tolerance
+Example:
+
+PANIC increases sell size
+CONFIDENT increases accumulation
+EXHAUSTED reduces activity
+REVENGE_TRADING increases irrational risk
+======================================== PHASE 4 — ECOSYSTEM STATE ENGINE
+Create:
+
+/core/ecosystemState.js
+
+Implement shared ecosystem conditions:
+
+{
+    sentiment,
+    volatility,
+    hypeLevel,
+    whalePressure,
+    congestion,
+    fearIndex,
+    momentum,
+    liquidityStress,
+    buyPressure,
+    sellPressure
+}
+Ecosystem state must update dynamically from:
+
+aggregate wallet activity
+whale behavior
+market volatility
+failed transaction spikes
+aggressive distribution waves
+Wallets MUST react to ecosystem state.
+
+Example:
+
+high sentiment increases confidence
+high fear triggers panic selling
+high whale accumulation creates FOMO
+======================================== PHASE 5 — SOCIAL INFLUENCE GRAPH
+Create:
+
+/core/socialGraph.js
+
+Wallets should influence each other probabilistically.
+
+Implement:
+
+leader wallets
+follower wallets
+influence scores
+behavioral contagion
+whale imitation
+trend following
+Example:
+
+whale buys increase follower buy probability
+panic selling propagates fear
+high-profit wallets gain influence weight
+Influence must be probabilistic, not deterministic.
+
+======================================== PHASE 6 — MARKET REGIME ENGINE
+Create:
+
+/core/marketRegime.js
+
+Detect regimes:
+
+BULL
+BEAR
+SIDEWAYS
+VOLATILE
+LOW_LIQUIDITY
+DEAD
+PARABOLIC
+Wallet behavior must adapt to regimes.
+
+Examples:
+
+BULL increases aggression
+BEAR increases caution
+VOLATILE increases divergence
+LOW_LIQUIDITY reduces position size
+======================================== PHASE 7 — LIFECYCLE EVOLUTION
+Create:
+
+/core/lifecycleEngine.js
+
+Wallets must behave like living entities.
+
+Add lifecycle states:
+
+ACTIVE
+DORMANT
+RETIRED
+MIGRATING
+EVOLVING
+REACTIVATING
+Requirements:
+
+some wallets disappear temporarily
+dormant wallets return during hype
+weak wallets retire permanently
+profitable wallets scale up
+wallets can split capital into child wallets
+This must create long-term ecosystem continuity.
+
+======================================== PHASE 8 — PERSISTENT STATE STORAGE
+Create:
+
+/storage/walletStateStore.js
+
+Persist:
+
+DNA
+memory
+emotional state
+lifecycle state
+social graph
+pnl history
+timing profile
+strategy preferences
+Wallets must retain identity across system restarts.
+
+======================================== PHASE 9 — BEHAVIORAL DIVERGENCE ENGINE
+Create:
+
+/core/behavioralMutation.js
+
+Prevent long-term synchronization.
+
+Implement:
+
+gradual personality mutation
+emotional drift
+adaptive preference evolution
+nonlinear timing evolution
+Example:
+
+dna.aggression += randomMutation
+dna.patience -= adaptationDrift
+Mutations must be:
+
+small
+persistent
+cumulative
+probabilistic
+======================================== PHASE 10 — ECOSYSTEM HEALTH ENGINE
+Create:
+
+/analytics/ecosystemHealth.js
+
+Monitor:
+
+synchronization risk
+timing correlation
+behavioral clustering
+excessive aggression
+panic cascades
+RPC failure cascades
+wallet death spikes
+Implement automatic correction systems.
+
+Examples:
+
+reduce aggression globally
+increase dormancy
+diversify timing
+lower participation rate
+======================================== CRITICAL ARCHITECTURAL REQUIREMENTS
+DO NOT hardcode behavior directly into strategy phases.
+
+DO NOT create deterministic state machines.
+
+Instead implement:
+
+modifier-based behavioral composition.
+
+Correct architecture:
+
+finalBuyProbability =
+    baseProbability
+    * dnaModifier
+    * emotionalModifier
+    * ecosystemModifier
+    * marketRegimeModifier
+    * socialInfluenceModifier
+    * lifecycleModifier;
+Behavior must emerge from layered state interactions.
+
+======================================== EXECUTION REQUIREMENTS
+Maintain compatibility with:
+
+WalletAgent
+AgentExecutor
+AgentStrategyBridge
+existing behaviors
+entropy engine
+existing swap execution
+retry systems
+wallet pool manager
+DO NOT break:
+
+distributed execution
+async agent loops
+retry logic
+verification systems
+lifecycle management
+======================================== FINAL OBJECTIVE
+The completed architecture should no longer resemble:
+
+“randomized coordinated bots”
+
+It should resemble:
+
+“a persistent adaptive synthetic market ecosystem with evolving psychological agents.”
+
+Focus on:
+
+emergence
+realism
+divergence
+persistence
+adaptation
+ecosystem continuity
+NOT simple randomness.
+
+
